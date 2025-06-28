@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Claim Tracker</title>
+    <style>
+        table, th, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+            padding: 5px;
+        }
+        a {text-decoration: none; padding: 4px 8px; background: #eee; border-radius: 4px;}
+    </style>
+    <script>
+        function startCountdowns() {
+            const timers = document.querySelectorAll('.deadline');
+            timers.forEach(timerCell => {
+                const deadline = new Date(timerCell.dataset.deadline);
+
+                function update() {
+                    const now = new Date();
+                    const diff = deadline - now;
+
+                    if (diff <= 0) {
+                        timerCell.textContent = "Expired";
+                        return;
+                    }
+
+                    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+                    const minutes = Math.floor((diff / (1000 * 60)) % 60);
+                    const seconds = Math.floor((diff / 1000) % 60);
+
+                    timerCell.textContent = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+                }
+
+                update();
+                setInterval(update, 1000);
+            });
+        }
+
+        window.onload = startCountdowns;
+    </script>
+</head>
+<body>
+    <h1>Claim Entry Form</h1>
+    <form action="{{ url_for('add_claim') }}" method="POST">
+        <label>Claim ID: <input type="text" name="claim_id" required></label><br><br>
+        <label>Patient Name: <input type="text" name="patient_name" required></label><br><br>
+        <label>DOA: <input type="date" name="doa" required></label><br><br>
+        <label>DOD: <input type="date" name="dod" required></label><br><br>
+        <label>Claim Amount: <input type="number" name="claim_amount" required></label><br><br>
+        <button type="submit">Add Claim</button>
+    </form>
+
+    <h2>Claims Table</h2>
+    <table>
+        <tr>
+            <th>Sr. No.</th>
+            <th>Claim ID</th>
+            <th>Patient Name</th>
+            <th>DOA</th>
+            <th>DOD</th>
+            <th>Claim Amount</th>
+            <th>Countdown</th>
+            <th>Actions</th>
+        </tr>
+        {% for claim in claims %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ claim.claim_id }}</td>
+            <td>{{ claim.patient_name }}</td>
+            <td>{{ claim.doa }}</td>
+            <td>{{ claim.dod }}</td>
+            <td>{{ claim.claim_amount }}</td>
+            <td class="deadline" data-deadline="{{ claim.deadline }}"></td>
+            <td>
+                <a href="{{ url_for('edit_claim', id=claim.id) }}">Edit</a> |
+                <a href="{{ url_for('delete_claim', id=claim.id) }}" onclick="return confirm('Delete this claim?')">Delete</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h3>Export Data:</h3>
+    <a href="{{ url_for('export_excel') }}">Export to Excel</a> | 
+    <a href="{{ url_for('export_pdf') }}">Export to PDF</a>
+</body>
+</html>
